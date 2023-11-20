@@ -6,10 +6,11 @@ public class TerrainGenerator : MonoBehaviour
 {
     public int width = 256; // Largura do terreno
     public int height = 256; // Altura do terreno
-    public float scale = 20f; // Escala do ruído
+    private int seed = 0;
 
     private void Start()
     {
+        seed = Random.Range(0, 10000000); // Gera uma semente aleatória entre 0 e 10000
         GenerateTerrain();
     }
 
@@ -23,8 +24,8 @@ public class TerrainGenerator : MonoBehaviour
         {
             for (int y = 0; y < height; y++)
             {
-                float xCoord = (float)x / width * scale;
-                float yCoord = (float)y / height * scale;
+                float xCoord = (float)x / width * seed;
+                float yCoord = (float)y / height * seed;
                 float sample = Mathf.PerlinNoise(xCoord, yCoord); // Gera ruído Perlin
 
                 terrainTexture.SetPixel(x, y, new Color(sample, sample, sample));
