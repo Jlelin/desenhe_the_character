@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class TerrainGenerator : MonoBehaviour
 {
+    public Sprite castleLeftSprite; // Sprite do castelo esquerdo
+    public Sprite castleRightSprite; // Sprite do castelo direito
     private int seed = 0;
 
     private void Start()
@@ -19,23 +21,37 @@ public class TerrainGenerator : MonoBehaviour
         float screenWidth = Screen.width;
         float aspectRatio = screenWidth / screenHeight;
 
-        float percentOfScreenWidth = 1f; // Define o terreno como 80% da largura da tela
+        float percentOfScreenWidth = 1f; // Define o terreno como 100% da largura da tela
         int width = Mathf.RoundToInt(screenWidth * percentOfScreenWidth);
         int height = Mathf.RoundToInt(width / aspectRatio); // Mantendo a proporção
 
         // Cria um novo objeto de textura para o terreno
         Texture2D terrainTexture = new Texture2D(width, height);
 
-        // Percorre cada pixel da textura e define sua cor baseada no ruído
+        // Percorre cada pixel da textura e define sua cor baseada nos sprites dos castelos
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                float xCoord = (float)x / width * seed;
-                float yCoord = (float)y / height * seed;
-                float sample = Mathf.PerlinNoise(xCoord, yCoord); // Gera ruído Perlin
+                Sprite sprite;
+                // Verifica se está na metade esquerda ou direita da tela
+                if (x < width / 2)
+                {
+                    sprite = castleLeftSprite;
+                }
+                else
+                {
+                    sprite = castleRightSprite;
+                }
 
-                terrainTexture.SetPixel(x, y, new Color(sample, sample, sample));
+                // Obtém as coordenadas dentro do sprite
+                float xCoord = (float)(x % (width / 2)) / (width / 2) * sprite.texture.width;
+                float yCoord = (float)y / height * sprite.texture.height;
+
+                // Obtém a cor do pixel no sprite do castelo
+                Color sample = sprite.texture.GetPixel(Mathf.FloorToInt(xCoord), Mathf.FloorToInt(yCoord));
+
+                terrainTexture.SetPixel(x, y, sample); // Define o pixel no terreno
             }
         }
 
@@ -54,7 +70,8 @@ public class TerrainGenerator : MonoBehaviour
         float targetScaleX = targetSpriteWidth / spriteWidth;
         float targetScaleY = targetScaleX; // Mantém a proporção
 
-        // Define a escala do objeto para ocupar 80% da largura da tela
+        // Define a escala do objeto para ocupar 100% da largura da tela
         transform.localScale = new Vector3(targetScaleX, targetScaleY, 1f);
+
     }
 }
