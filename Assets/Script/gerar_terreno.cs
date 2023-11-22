@@ -2,76 +2,78 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TerrainGenerator : MonoBehaviour
+public class GerarTerreno : MonoBehaviour
 {
-    public Sprite castleLeftSprite; // Sprite do castelo esquerdo
-    public Sprite castleRightSprite; // Sprite do castelo direito
-    private int seed = 0;
+    public List<Sprite> terrainSprites; // Lista dos sprites de terreno que você importou
+    public GameObject terrainTilePrefab; // Prefab do objeto que representará cada tile do terreno
+    public float fractionOfScreen = 1.0f; // Fração da tela para o terreno
 
     private void Start()
     {
-        seed = Random.Range(0, 10000000); // Gera uma semente aleatória entre 0 e o valor escolhido
         GenerateTerrain();
     }
 
     void GenerateTerrain()
     {
-        // Obtém a altura e largura da tela em pixels
-        float screenHeight = Screen.height;
-        float screenWidth = Screen.width;
-        float aspectRatio = screenWidth / screenHeight;
+        // Obtém a câmera principal
+        Camera mainCamera = Camera.main;
+        float orthographicSize = mainCamera.orthographicSize;
+        float cameraHeight = 2.0f * orthographicSize;
+        float aspectRatio = (float)Screen.width / Screen.height;
+        float cameraWidth = cameraHeight * aspectRatio;
 
-        float percentOfScreenWidth = 1f; // Define o terreno como 100% da largura da tela
-        int width = Mathf.RoundToInt(screenWidth * percentOfScreenWidth);
-        int height = Mathf.RoundToInt(width / aspectRatio); // Mantendo a proporção
-
-        // Cria um novo objeto de textura para o terreno
-        Texture2D terrainTexture = new Texture2D(width, height);
-
-        // Percorre cada pixel da textura e define sua cor baseada nos sprites dos castelos
-        for (int x = 0; x < width; x++)
+        // Verifica se a câmera principal existe
+        if (mainCamera != null)
         {
-            for (int y = 0; y < height; y++)
+            // Obtém a largura e altura da câmera e multiplica pela fração desejada
+            float screenWidth = cameraWidth * fractionOfScreen;
+            float screenHeight = cameraHeight * fractionOfScreen;
+
+            // Calcula o número de tiles na largura e altura
+            int tileCountX = 10; // Altere conforme necessário
+            int tileCountY = 10; // Altere conforme necessário
+
+            // Calcula o tamanho de cada tile
+            float tileSizeX = screenWidth / tileCountX;
+            float tileSizeY = screenHeight / tileCountY;
+
+            // Calcula o espaçamento entre os tiles para evitar sobreposição
+            float tileSpacingX = tileSizeX * 0.1f; // Ajuste o valor conforme necessário
+            float tileSpacingY = tileSizeY * 0.1f; // Ajuste o valor conforme necessário
+
+            // Crie um objeto pai para os tiles
+            GameObject parentTile = new GameObject("ParentTile");
+            parentTile.transform.position = new Vector3(-1.27f, -0.72f, 0f); // Defina a posição desejada
+
+            // Loop para criar e posicionar os objetos representando os tiles do terreno
+            for (int x = 0; x < tileCountX; x++)
             {
-                Sprite sprite;
-                // Verifica se está na metade esquerda ou direita da tela
-                if (x < width / 2)
+                for (int y = 0; y < tileCountY; y++)
                 {
-                    sprite = castleLeftSprite;
+                    GameObject terrainTile = Instantiate(terrainTilePrefab, Vector3.zero, Quaternion.identity);
+
+                    // Faça o tile ser filho do objeto pai
+                    terrainTile.transform.parent = parentTile.transform;
+
+                    SpriteRenderer spriteRenderer = terrainTile.GetComponent<SpriteRenderer>();
+
+                    // Define o tamanho do tile
+                    terrainTile.transform.localScale = new Vector3(tileSizeX, tileSizeY, 1f);
+
+                    // Calcula a posição considerando o espaçamento entre os tiles
+                    float adjustedX = (x * (tileSizeX + tileSpacingX)) - (screenWidth * 0.5f) + (tileSizeX * 0.5f);
+                    float adjustedY = (y * (tileSizeY + tileSpacingY)) - (screenHeight * 0.5f) + (tileSizeY * 0.5f);
+                    terrainTile.transform.position = new Vector3(adjustedX, adjustedY, 0);
+
+                    // Define a sprite aleatória para o tile
+                    int randomSpriteIndex = Random.Range(0, terrainSprites.Count);
+                    spriteRenderer.sprite = terrainSprites[randomSpriteIndex];
                 }
-                else
-                {
-                    sprite = castleRightSprite;
-                }
-
-                // Obtém as coordenadas dentro do sprite
-                float xCoord = (float)(x % (width / 2)) / (width / 2) * sprite.texture.width;
-                float yCoord = (float)y / height * sprite.texture.height;
-
-                // Obtém a cor do pixel no sprite do castelo
-                Color sample = sprite.texture.GetPixel(Mathf.FloorToInt(xCoord), Mathf.FloorToInt(yCoord));
-
-                terrainTexture.SetPixel(x, y, sample); // Define o pixel no terreno
             }
         }
-
-        // Aplica os pixels à textura
-        terrainTexture.Apply();
-
-        // Exibe a textura como um Sprite na cena
-        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
-        spriteRenderer.sprite = Sprite.Create(terrainTexture, new Rect(0, 0, width, height), Vector2.zero);
-
-        // Obtém o tamanho atual do sprite na cena
-        float spriteWidth = spriteRenderer.bounds.size.x;
-
-        // Calcula a escala necessária para ocupar valor% da largura da tela
-        float targetSpriteWidth = screenWidth * percentOfScreenWidth;
-        float targetScaleX = targetSpriteWidth / spriteWidth;
-        float targetScaleY = targetScaleX; // Mantém a proporção
-
-        // Define a escala do objeto para ocupar 100% da largura da tela
-        transform.localScale = new Vector3(targetScaleX, targetScaleY, 1f);
-
+        else
+        {
+            Debug.LogError("Câmera principal não encontrada!");
+        }
     }
 }
